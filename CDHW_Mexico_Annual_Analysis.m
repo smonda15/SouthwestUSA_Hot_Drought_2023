@@ -1,0 +1,660 @@
+%Figure 2 a, b
+
+folderPath = '/Users/smonda15/Ongoing Work/Publication_Compound_Drought_Heatwave_Over_Phoneix/Datasets/CPC Global Minimum Temperature';
+ncFiles = dir(fullfile(folderPath, '*.nc'));
+
+
+b=zeros(259200,1);
+d=zeros(259200,1);
+c=1979;
+
+for i = 1:length(ncFiles)
+    
+    filePath = fullfile(folderPath, ncFiles(i).name);
+    
+    
+    maxtempData = ncread(filePath, 'tmin');
+    a       = size(maxtempData);
+    
+  
+    maxtempData = reshape(maxtempData,[a(1)*a(2),a(3)]);
+    %isLeapYear = (rem(c, 4) == 0 && rem(c, 100) ~= 0) || (rem(c, 400) == 0);
+    %if isLeapYear
+    if i<=45    
+    maxtempData1 = maxtempData(:,1:364);
+    else
+        maxtempData1 = maxtempData(:,1:114);
+    end
+
+        %maxtempData2 = maxtempData(:,90:276);
+    %else 
+        %maxtempData1 = maxtempData(:,91:273);
+        %maxtempData2 = maxtempData(:,89:275);
+    %end
+    b  =cat(2,b,maxtempData1);
+    %d  =cat(2,d,maxtempData2);
+
+    c=c+1;
+    i
+end
+
+b(:,1)  =   [];
+%d(:,1)  =   [];
+
+%V=zeros(259200,2);
+%for i=1:360
+    %V(((720*(i-1)+1):(720*i)),1)=lon(1:720,1);
+    %V(((720*(i-1)+1):(720*i)),2)=lat(i,1);
+%end
+
+
+
+
+
+%Extracting Grid-Locations Corresponding to Southwest USA
+
+SWNA             =  readmatrix('/Users/smonda15/Ongoing Work/Publication_Compound_Drought_Heatwave_Over_Phoneix/Datasets/Shapefiles/Southwest_SouthernUSA_Mexico.csv');
+SWNA_latlon      =  SWNA(:,1:2);
+SWNA_index       =  SWNA(:,3);
+
+
+
+%Extracting Temperature Data Corresponding to Southwest USA
+SWNAheat         =  b(SWNA_index ,:);
+%SWNAheat1        =  d(SWNA_index ,:);
+
+SWNAheat(:,729)   =  SWNAheat(:,728);
+SWNAheat(:,730)   =  SWNAheat(:,731);
+SWNAheat(:,1572)  =  SWNAheat(:,1571);
+SWNAheat(:,1576)  =  SWNAheat(:,1577);
+SWNAheat(:,1574)  =  0.5*(SWNAheat(:,1572)+SWNAheat(:,1576));
+SWNAheat(:,1573)  =  0.5*(SWNAheat(:,1572)+SWNAheat(:,1574));
+SWNAheat(:,1575)  =  0.5*(SWNAheat(:,1574)+SWNAheat(:,1576));
+SWNAheat(:,1827)  =  0.5*(SWNAheat(:,1826)+SWNAheat(:,1828));
+SWNAheat(:,2185)  =  0.5*(SWNAheat(:,2184)+SWNAheat(:,2186));
+SWNAheat(:,2191)  =  SWNAheat(:,2190);
+SWNAheat(:,2192)  =  SWNAheat(:,2193);
+SWNAheat(:,2196)  =  SWNAheat(:,2195);
+SWNAheat(:,2197)  =  SWNAheat(:,2198);
+SWNAheat(:,2200)  =  0.5*(SWNAheat(:,2199)+SWNAheat(:,2201));
+SWNAheat(:,2203)  =  0.5*(SWNAheat(:,2202)+SWNAheat(:,2204));
+SWNAheat(:,2221)  =  0.5*(SWNAheat(:,2220)+SWNAheat(:,2222));
+SWNAheat(:,2382)  =  0.5*(SWNAheat(:,2381)+SWNAheat(:,2383));
+SWNAheat(:,2406)  =  0.5*(SWNAheat(:,2405)+SWNAheat(:,2407));
+
+SWNAheat(:,2552)  =  0.5*(SWNAheat(:,2551)+SWNAheat(:,2553));
+SWNAheat(:,2635)  =  0.5*(SWNAheat(:,2634)+SWNAheat(:,2636));
+SWNAheat(:,2811)  =  0.5*(SWNAheat(:,2810)+SWNAheat(:,2812));
+SWNAheat(:,2866)  =  0.5*(SWNAheat(:,2865)+SWNAheat(:,2867));
+SWNAheat(:,2873)  =  0.5*(SWNAheat(:,2872)+SWNAheat(:,2874));
+SWNAheat(:,4945)  =  0.5*(SWNAheat(:,4944)+SWNAheat(:,4946));
+
+SWNAheat_r   = reshape(SWNAheat(:,1:16380),[2219,364,45]);
+
+%Detection of Calendar Percentile and Heatwave Detection
+
+SWNAheat_pool      =   zeros(2219,364,225);
+for i=1:2219
+    for j=1:364
+        t=zeros(2,1);
+
+        for k=1:45
+            s  = (SWNAheat(i,(364*(k-1)+j):(364*(k-1)+j+4)))';
+            t  = (cat(1,t,s));
+        end
+      t(1:2)=[];  
+     SWNAheat_pool(i,j,:)=t';
+    end
+    i
+end
+
+%Calculating the 90th and 95th percentile and other percentiles
+
+SWheat_95 = zeros(2219,364);
+SWheat_90 = zeros(2219,364);
+SWheat_80 = zeros(2219,364);
+SWheat_75 = zeros(2219,364);
+SWheat_25 = zeros(2219,364);
+
+
+for i=1:2219
+    for j=1:364
+        SWheat_95(i,j)=prctile(SWNAheat_pool(i,j,:),95);
+        SWheat_90(i,j)=prctile(SWNAheat_pool(i,j,:),90);
+        SWheat_80(i,j)=prctile(SWNAheat_pool(i,j,:),80);
+        SWheat_25(i,j)=prctile(SWNAheat_pool(i,j,:),25);
+        SWheat_75(i,j)=prctile(SWNAheat_pool(i,j,:),75);
+    end
+    i
+end
+%We start working here
+%Calculating Spatiotemporal Data with heatwave occurrence as 1 and not
+%occurrence as 0
+
+%SWheat_r    =  reshape(SWNAheat,[2219,364,45]);
+
+SWheat_p    =  zeros(2219,16494);
+% 
+for i=1:2219
+    for j=1:45
+        l = 364*(j-1)+1;
+        k = 364*j;
+        for p=l:k
+            if SWNAheat(i,p)>SWheat_80(i,p-l+1)
+                SWheat_p(i,p)=1;
+            end
+        end
+    end
+    i
+end
+
+for i=1:2219
+    for j=16381:16494
+        if SWNAheat(i,j)>SWheat_80(i,j-16380)
+            SWheat_p(i,j)=1;
+        end
+    end
+end
+
+% 
+%         
+%         
+%     end
+%     i
+% end
+
+SWheat_d1 = (reshape(SWheat_d,[2219,364*45]))';
+SWheat_b1 = (reshape(SWheat_b,[2219,364*45]))';
+SWheat_p1 = (reshape(SWheat_p,[2219,364*45]))';
+
+%Calculating Occurrence of Heatwaves as Binary Time series        
+
+
+heatwaveEvents_80 = findHeatwaves_2D(SWheat_p);
+
+hw_temp_80        = (heatwaveEvents_80.*SWNAheat);
+
+%hw_temp_95 & hw_temp_90 can be used to calculate the heatwave severity as
+%well as the 
+
+%Calculating Duration of each Heatwaves
+
+
+heatwaveDuration_80       = DurationHeatwaves_2D(SWheat_p);
+SWheat_80_r = SWheat_80';
+
+
+
+
+save('Nighttime_Heatwave_occurrence_25042024.mat','heatwaveEvents_80');
+
+
+%Area under Drought
+
+%%Extracting CPC Precipitation data
+lon = ncread("/Users/smonda15/Ongoing Work/Publication_Compound_Drought_Heatwave_Over_Phoneix/Datasets/CPC Global Precipitation/precip.1979.nc",'lon');
+lat = ncread("/Users/smonda15/Ongoing Work/Publication_Compound_Drought_Heatwave_Over_Phoneix/Datasets/CPC Global Precipitation/precip.1979.nc",'lat');
+
+folderPath = '/Users/smonda15/Ongoing Work/Publication_Compound_Drought_Heatwave_Over_Phoneix/Datasets/CPC Global Precipitation';
+ncFiles = dir(fullfile(folderPath, '*.nc'));
+
+
+b=zeros(259200,1);
+d=zeros(259200,1);
+
+c=1979;
+
+for i = 1:length(ncFiles)
+    
+    filePath = fullfile(folderPath, ncFiles(i).name);
+    
+    
+    precipData = ncread(filePath, 'precip');
+    a       = size(precipData);
+    
+  
+    precipData = reshape(precipData,[a(1)*a(2),a(3)]);
+    %isLeapYear = (rem(c, 4) == 0 && rem(c, 100) ~= 0) || (rem(c, 400) == 0);
+    if i<=45    
+    precipData1 = precipData(:,1:364);
+    else
+        precipData1 = precipData(:,1:114);
+    end
+        
+        %precipData2 = precipData(:,1:364);
+    %else 
+        %precipData1 = precipData(:,91:273);
+        %precipData2 = precipData(:,1:364);
+    %end
+    b  =cat(2,b,precipData1);
+    %d  =cat(2,d,precipData2);
+    
+
+    c=c+1;
+    i
+end
+
+b(:,1)=[];
+%d(:,1)=[];
+
+
+SWNA             =  readmatrix('/Users/smonda15/Ongoing Work/Publication_Compound_Drought_Heatwave_Over_Phoneix/Datasets/Shapefiles/Southwest_SouthernUSA_Mexico.csv');
+SWNA_latlon      =  SWNA(:,1:2);
+SWNA_index       =  SWNA(:,3);
+
+
+SW_summer_pcp  =  b(SWNA_index,:);
+%SW_precip      =  d(SWNA_index,:);
+
+
+%Converting daily data to weekly data
+
+SW_summer_pcp = SW_summer_pcp(:,1:16492);
+
+SW_week_pcp   = zeros(2219,2356);
+
+for i=1:2219
+    for j=1:2356
+        k =7*(j-1)+1;
+        l = 7*j;
+        SW_week_pcp(i,j)=sum(SW_summer_pcp(i,k:l));
+    end
+end
+
+
+SW_week_pcp(find(SW_week_pcp<0))=0;
+
+
+
+SW_SPI12 = zeros(2304,2219);
+%SW_SPI2 = zeros(2288,2256);
+%SW_SPI2 = zeros(585,439);
+for i=1:2219
+    SW_SPI12(:,i)= SPI(SW_week_pcp(i,:)',48,52);
+    %SW_SPI2(:,i)= SPI(weeklyDataMatrix(i,:)',12,52);
+end
+
+SW_SPI3 = zeros(2304,2219);
+%SW_SPI2 = zeros(2288,2256);
+%SW_SPI2 = zeros(585,439);
+for i=1:2219
+    SW_SPI3(:,i)= SPI(SW_week_pcp(i,:)',12,52);
+    %SW_SPI2(:,i)= SPI(weeklyDataMatrix(i,:)',12,52);
+end
+
+
+
+SW_SPI12     =   reshape(SW_SPI12,[52,44,2219]);
+SW_SPI3      =   reshape(SW_SPI3,[52,44,2219]);
+
+%Extracting SPI3 for summer 
+
+%SW_SPI3     =   SW_SPI3(14:39,:,:);
+%SW_SPI3     =   reshape(SW_SPI3,[26*44,2256]);
+
+%Using SPI=-1 as Drought Threshold moderate drought and -1.5 for extreme
+%drought
+
+SW_drought3 = zeros(2304,2219);
+
+for i=1:2304
+    for j=1:2219
+        if SW_SPI3(i,j)<-0.5
+            SW_drought3(i,j)=1;
+        end
+    end
+end
+
+SW_drought12 = zeros(2304,2219);
+
+for i=1:2304
+    for j=1:2219
+        if SW_SPI12(i,j)<-0.5
+            SW_drought12(i,j)=1;
+        end
+    end
+end
+
+save('Drought_occurrence_anomaly.mat','SW_drought12','SW_drought3','SW_SPI3','SW_SPI12');
+
+
+%Compound Drought and Heatwave
+
+%Cmbining Daily Heatwave occurrence to Weekly heatwave occurrence
+heatwaveEvents_80_rw = zeros(2219,2356);
+
+for i=1:2356
+    k = 7*(i-1)+1;
+    l = 7*i;
+    for j=1:2219
+    heatwaveEvents_80_rw(j,i) = sum(heatwaveEvents_80(j,k:l));
+    end
+end
+
+%heatwaveEvents_90_rwsum  =  sum(heatwaveEvents_90_rw,3);
+
+
+%Extracting data from 1980 to match with drought
+
+heatwaveEvents_80_rw_1980      = heatwaveEvents_80_rw(:,53:2356);
+
+
+%Changing Drought data to match the same dimension as the heatwaves
+%SW_drought3_r       = SW_drought3';
+%SW_drought3_r       = reshape(SW_drought3_r,[2256,52,44]);
+%SW_drought3_r       = SW_drought3_r(:,14:39,:);
+%SW_drought3_r       = reshape(SW_drought3_r,[2256,26*44]);
+
+%If we are considering long-term drought in Compound Drought & Heatwave
+SW_drought12_r        = SW_drought12';
+
+%SW_drought12_summer   = zeros(2219,1144);
+
+%for i=1:44
+%     k = 52*(i-1)+1;
+%     l = 52*i;
+%     m = 26*(i-1)+1;
+%     n = 26*i;
+% 
+%     p = SW_drought12_r(:,k:l);
+% 
+%     SW_drought12_summer(:,m:n) = p(:,14:39);
+% end
+
+%If we are considering short-term drought in compound drought and heatwave
+SW_drought3_r        = SW_drought3';
+
+% SW_drought3_summer   = zeros(2219,1144);
+% 
+% for i=1:44
+%     k = 52*(i-1)+1;
+%     l = 52*i;
+%     m = 26*(i-1)+1;
+%     n = 26*i;
+% 
+%     p = SW_drought3_r(:,k:l);
+% 
+%     SW_drought3_summer(:,m:n) = p(:,14:39);
+% end
+
+
+
+%Analyzing Dependency among compound Drought and Heatwaves
+
+heatwaveEvents80_w = zeros(2219,2304);
+
+for i=1:2219
+    for j=1:2304
+        if heatwaveEvents_80_rw_1980(i,j)>=2
+            heatwaveEvents80_w(i,j)=1;
+        end
+    end
+end
+
+%heatwaveEvents90_wsum = (sum(heatwaveEvents90_w,1))';
+
+%SW_drought3_r_sum     = (sum(SW_drought3_r,1))';
+
+Compound_dr_hw  = zeros(2219,2304);
+
+for i=1:2219
+    for j=1:2304
+        if heatwaveEvents80_w(i,j)==1 && SW_drought3_r(i,j)==1
+            Compound_dr_hw(i,j)=1;
+        end
+    end
+end
+
+
+
+
+Compound_dr_hw_sum    = (sum(Compound_dr_hw,1))';
+
+save('Nighttime_CDHW_occurrence_25042024.mat','Compound_dr_hw');
+
+
+%%Calculate the heatwave component of Compound Drought & Heatwave severity
+
+SWheat_normf  =  zeros(2219,364);
+
+for i=1:2219
+    for j=1:364
+        SWheat_normf(i,j)=SWheat_75(i,j)-SWheat_25(i,j);
+    end
+end
+
+SWheat_numerator = zeros(2219,16380);
+
+for i=1:45
+    for j=1:2219
+        k = 364*(i-1)+1;
+        l = 364*i;
+
+        SWheat_numerator(j,k:l) = SWNAheat(j,k:l)-SWheat_25(j,:);
+    end
+end
+
+
+
+
+CDHW_hw_sev = zeros(2219,16380);
+
+for i=1:45
+    k = 364*(i-1)+1;
+    l = 364*i;
+    for j=1:2219
+
+    CDHW_hw_sev(j,k:l) =  SWheat_numerator(j,k:l)./SWheat_normf(j,:);
+    end
+
+end
+
+%Multiplying the severity with heatwave occurrence to extract the severity
+%corresponding to only heatwave occurrence
+heatwaveEvents_80_T =  heatwaveEvents_80';
+
+CDHW_hw_sev_occ = zeros(2219,16380);
+
+for i=1:16380
+  
+    for j=1:2219
+
+    CDHW_hw_sev_occ(j,i) =  CDHW_hw_sev(j,i)*heatwaveEvents_80_T(j,i);
+    end
+
+end
+
+
+
+
+%Extracting the severity from 1980
+
+CDHW_hw_sev_1980 = CDHW_hw_sev_occ(:,365:16380);
+
+
+
+CDHW_hw_sev_r    = zeros(2219,364,44);
+
+for i=1:44
+    k  =  364*(i-1)+1;
+    l  =  364*i;
+
+    CDHW_hw_sev_r(:,:,i) =  CDHW_hw_sev_1980(:,k:l);
+end
+
+
+%CDHW_hw_sev_r   = CDHW_hw_sev_r(:,1:182,:);
+
+CDHW_hw_sev_r   = reshape(CDHW_hw_sev_r,[2219,364*44]);
+
+CDHW_hw_sev_rw  = zeros(2219,2288);
+
+for i=1:2288
+    for j=1:2219
+        k = 7*(i-1)+1;
+        l = 7*i;
+
+        CDHW_hw_sev_rw(j,i)= sum(CDHW_hw_sev_r(j,k:l));
+    end
+end
+
+%Extracting summer drought characteristics (lets keep it in comments for
+%the time)
+% SW_SPI3_summer = zeros(1144,2219);
+% 
+% for i=1:44
+%     m   = 52*(i-1)+1;
+%     n   = 52*i;
+% 
+%     p   = 26*(i-1)+1;
+%     q   = 26*i;
+%     l   = SW_SPI3(m:n,:);
+%     SW_SPI3_summer(p:q,:) = l(14:39,:);
+% end
+% 
+% 
+% SW_SPI3_summer = SW_SPI3_summer';
+
+SW_SPI3_r = SW_SPI3';
+CDHW_hw_dr3_sev  = zeros(2219,2288);
+
+for i=1:2219
+    for j=1:2288
+
+        CDHW_hw_dr3_sev(i,j) = CDHW_hw_sev_rw(i,j)*SW_SPI3_r(i,j)*SW_drought3_r(i,j)*(-1);
+    end
+end
+
+save('Daytime_CDHW_occurrence_severity','CDHW_hw_dr3_sev','Compound_dr_hw');
+
+
+%Plotting the %Area under heatwave, drought and compound drought and
+%heatwave
+
+night_hw                  =  heatwaveEvents80_w;
+night_dr                  =  SW_drought3_r;
+night_cdhw                =  Compound_dr_hw;
+
+
+night_hw_2024             = night_hw(:,2185:2304);
+night_dr_2024             = night_dr(:,2185:2304);
+night_cdhw_2024           = night_cdhw(:,2185:2304);
+
+SWNA                      =  readtable('/Users/smonda15/Ongoing Work/Publication_Compound_Drought_Heatwave_Over_Phoneix/Datasets/Shapefiles/Southwest_SouthernUSA_Mexico.csv');
+states                    = SWNA(:,5);
+index_MX                  = find(strcmp(states.NAME, ''));
+
+night_hw_2024_mx          = night_hw_2024(index_MX,:);
+night_dr_2024_mx          = night_dr_2024(index_MX,:);
+night_cdhw_2024_mx        = night_cdhw_2024(index_MX,:);
+
+night_hw_2024_mx_mean     = (sum(night_hw_2024_mx,1))';
+night_hw_2024_mx_mean     = 100*night_hw_2024_mx_mean/700;
+
+night_dr_2024_mx_mean     = (sum(night_dr_2024_mx,1))';
+night_dr_2024_mx_mean     = 100*night_dr_2024_mx_mean/700;
+
+night_cdhw_2024_mx_mean   = (sum(night_cdhw_2024_mx,1))';
+night_cdhw_2024_mx_mean   = 100*night_cdhw_2024_mx_mean/700;
+
+
+
+% Sample data vectors
+time = 1:120; % Assuming 100 time points for illustration
+heatwave = night_hw_2024_mx_mean; % Random data for heatwave
+drought = night_dr_2024_mx_mean; % Random data for drought
+compound = night_cdhw_2024_mx_mean; % Random data for compound events
+
+% Create the figure
+figure;
+hold on; % Hold on to add all plots to the same figure
+
+% Plot each area with specific colors and partial transparency
+h1 = area(time, heatwave, 'FaceColor', [1, 0.4, 0.4], 'EdgeColor', 'none');
+h1.FaceAlpha = 0.5; % Transparency
+
+h2 = area(time, drought, 'FaceColor', [0.4, 0.4, 1], 'EdgeColor', 'none');
+h2.FaceAlpha = 0.5; % Transparency
+
+h3 = area(time, compound, 'FaceColor', [0.6, 0.8, 0.2], 'EdgeColor', 'none');
+h3.FaceAlpha = 0.5; % Transparency
+
+% Customize the plot
+title('Area of Heatwave, Drought, and Compound Events Over Time');
+xlabel('Time');
+ylabel('Percentage of Area Affected');
+legend('Heatwave', 'Drought', 'Compound Events');
+
+% Set grid and limits
+grid on;
+xlim([1, 120]);
+ylim([0, 100]); % Adjust based on maximum values possible in your data
+
+% Release the hold
+hold off;
+
+
+
+
+day_hw                  =  heatwaveEvents80_w;
+day_dr                  =  SW_drought3_r;
+day_cdhw                =  Compound_dr_hw;
+
+
+day_hw_2024             = day_hw(:,2185:2304);
+day_dr_2024             = day_dr(:,2185:2304);
+day_cdhw_2024           = day_cdhw(:,2185:2304);
+
+SWNA                      =  readtable('/Users/smonda15/Ongoing Work/Publication_Compound_Drought_Heatwave_Over_Phoneix/Datasets/Shapefiles/Southwest_SouthernUSA_Mexico.csv');
+states                    = SWNA(:,5);
+index_MX                  = find(strcmp(states.NAME, ''));
+
+day_hw_2024_mx          = day_hw_2024(index_MX,:);
+day_dr_2024_mx          = day_dr_2024(index_MX,:);
+day_cdhw_2024_mx        = day_cdhw_2024(index_MX,:);
+
+day_hw_2024_mx_mean     = (sum(day_hw_2024_mx,1))';
+day_hw_2024_mx_mean     = 100*day_hw_2024_mx_mean/700;
+
+day_dr_2024_mx_mean     = (sum(day_dr_2024_mx,1))';
+day_dr_2024_mx_mean     = 100*day_dr_2024_mx_mean/700;
+
+day_cdhw_2024_mx_mean   = (sum(day_cdhw_2024_mx,1))';
+day_cdhw_2024_mx_mean   = 100*day_cdhw_2024_mx_mean/700;
+
+
+% Sample data vectors
+time = 1:120; % Assuming 100 time points for illustration
+heatwave = day_hw_2024_mx_mean; % Random data for heatwave
+drought = day_dr_2024_mx_mean; % Random data for drought
+compound = day_cdhw_2024_mx_mean; % Random data for compound events
+ymatrix  = [heatwave, drought, compound];
+
+% Create the figure
+figure;
+hold on; % Hold on to add all plots to the same figure
+
+% Plot each area with specific colors and partial transparency
+h1 = area(time, heatwave, 'FaceColor', [1, 0.4, 0.4], 'EdgeColor', 'none');
+h1.FaceAlpha = 0.5; % Transparency
+
+h2 = area(time, drought, 'FaceColor', [0.4, 0.4, 1], 'EdgeColor', 'none');
+h2.FaceAlpha = 0.5; % Transparency
+
+h3 = area(time, compound, 'FaceColor', [0.6, 0.8, 0.2], 'EdgeColor', 'none');
+h3.FaceAlpha = 0.5; % Transparency
+
+% Customize the plot
+title('Area of Heatwave, Drought, and Compound Events Over Time');
+xlabel('Time');
+ylabel('Percentage of Area Affected');
+legend('Heatwave', 'Drought', 'Compound Events');
+
+% Set grid and limits
+grid on;
+xlim([1, 120]);
+ylim([0, 100]); % Adjust based on maximum values possible in your data
+
+% Release the hold
+hold off;
+
